@@ -19,12 +19,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-76!e9001+-f4+*wuq@2j%+kh))1nqs@)28v%mh#%0=h5j)&6m^'
-
+# SECRET_KEY = 'django-insecure-76!e9001+-f4+*wuq@2j%+kh))1nqs@)28v%mh#%0=h5j)&6m^'
+SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost').split(',')
 
 # Application definition
 
@@ -129,6 +130,8 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -141,12 +144,12 @@ from cloudinary.utils import cloudinary_url
 
 # Configuration
 cloudinary.config(
-    cloud_name="dwivkhh8t",
-    api_key="925656835271691",
-    api_secret="xggQhqIzVzwLbOJx05apmM4Od7U",  # Click 'View API Keys' above to copy your API secret
+    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.getenv('CLOUDINARY_API_KEY'),
+    api_secret=os.getenv('CLOUDINARY_API_SECRET'),  # Click 'View API Keys' above to copy your API secret
     secure=True
 )
 
-PAYPAL_CLIENT_ID = "AemDUXuwdJQ9e4T71_RRzWyU5T6f30or_mSU_riuhG6fDVhGCOlbkjwasYBUtAMlFKMCk_cOSyLbX7fo"
-PAYPAL_SECRET = "EIw5O0zFLD3V82vvonNlOsTZFGk2WdIQwHhruVT4MMJOvqQRDTsmv9NA71AN7on73Z31smlxN8AO0dZw"
+PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID")
+PAYPAL_SECRET = os.getenv("PAYPAL_SECRET")
 
