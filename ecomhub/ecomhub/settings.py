@@ -94,7 +94,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'defaultdb',
         'USER': 'avnadmin',
-        'PASSWORD': os.environ.get('MYSQL_PASSWORD'),
+        'PASSWORD': os.getenv('MYSQL_PASSWORD'),
         'HOST': 'ecomercedb-heulwen.c.aivencloud.com',  # mặc định localhost
         'PORT': '15750'
     }
