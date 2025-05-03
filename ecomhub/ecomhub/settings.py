@@ -25,9 +25,7 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 
 DEBUG = os.getenv('DJANGO_DEBUG', 'False') == 'True'
 
-<<<<<<< HEAD
 ALLOWED_HOSTS = ['ecomsaletestapi.onrender.com']
-
 
 # Application definition
 
@@ -94,10 +92,11 @@ WSGI_APPLICATION = 'ecomhub.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'ecommercedb',
-        'USER': 'root',
-        'PASSWORD': 'nguyennguyen123',
-        'HOST': ''  # mặc định localhost
+        'NAME': 'defaultdb',
+        'USER': 'avnadmin',
+        'PASSWORD': os.environ.get('MYSQL_PASSWORD'),
+        'HOST': 'ecomercedb-heulwen.c.aivencloud.com',  # mặc định localhost
+        'PORT': '15750'
     }
 }
 
@@ -158,4 +157,3 @@ cloudinary.config(
 
 PAYPAL_CLIENT_ID = os.getenv("PAYPAL_CLIENT_ID")
 PAYPAL_SECRET = os.getenv("PAYPAL_SECRET")
-
