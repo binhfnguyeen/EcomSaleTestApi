@@ -280,8 +280,8 @@ class PaymentViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIV
                 }
             ],
             "application_context": {
-                "return_url": "http://127.0.0.1:8000/payments/paypal-success",
-                "cancel_url": "http://127.0.0.1:8000/payments/paypal-cancel"
+                "return_url": "https://ecomsaletestapi.onrender.com/paypal-success",
+                "cancel_url": "https://ecomsaletestapi.onrender.com/paypal-cancel"
             }
         }
         res = requests.post(
