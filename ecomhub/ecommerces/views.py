@@ -92,7 +92,7 @@ class ShopViewSet(viewsets.ViewSet, generics.ListCreateAPIView, generics.Retriev
 
 
 class ProductViewSet(viewsets.ViewSet, generics.ListAPIView, generics.RetrieveAPIView):
-    queryset = Product.objects.filter(active=True).prefetch_related('images')
+    queryset = Product.objects.filter(active=True).prefetch_related('images').order_by('id')
     serializer_class = ProductSerializer
     pagination_class = paginators.ProductPaginator
 
