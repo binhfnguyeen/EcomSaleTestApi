@@ -59,6 +59,16 @@ class ShopViewSet(viewsets.ViewSet, generics.ListCreateAPIView, generics.Retriev
     serializer_class = ShopSerializer
     permission_classes = [perms.IsOwnerShop]
 
+    @action(methods=['get'], detail=False, url_path='my_shop', permission_classes=[perms.IsOwnerShop])
+    def get_my_shop(self, request):
+        try:
+            shop = Shop.objects.get(user=request.user)
+            serializer = ShopSerializer(shop)
+        except Shop.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
+        return Response(serializer.data)
+
     @action(methods=['get'], url_path='products', detail=True)
     def get_product(self, request, pk):
         shop = self.get_object()
