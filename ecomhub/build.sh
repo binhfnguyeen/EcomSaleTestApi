@@ -6,6 +6,8 @@ pip install -r requirements.txt
 # Thu thập static files
 python manage.py collectstatic --noinput
 
+python manage.py makemigrations --noinput
+
 # Áp dụng migrate
 python manage.py migrate --noinput
 
