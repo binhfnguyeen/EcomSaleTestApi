@@ -227,7 +227,7 @@ class OrderViewSet(viewsets.ViewSet, generics.ListAPIView, generics.RetrieveAPIV
     def create(self, request, *args, **kwargs):
         user = request.user
         shipping_address = request.data.get("shipping_address")
-        order_status  = request.data.get("status")
+        order_status = request.data.get("status")
         items = request.data.get('items', [])
 
         if not items:
@@ -244,7 +244,8 @@ class OrderViewSet(viewsets.ViewSet, generics.ListAPIView, generics.RetrieveAPIV
                 product = Product.objects.get(pk=product_id)
             except Product.DoesNotExist:
                 order.delete()
-                return Response({'error': f"Sản phẩm có ID {product_id} không tồn tại"}, status=status.HTTP_404_NOT_FOUND)
+                return Response({'error': f"Sản phẩm có ID {product_id} không tồn tại"},
+                                status=status.HTTP_404_NOT_FOUND)
 
             OrderDetail.objects.create(order=order, product=product, quantity=quantity)
             total += product.price * quantity
@@ -265,7 +266,10 @@ class OrderViewSet(viewsets.ViewSet, generics.ListAPIView, generics.RetrieveAPIV
         order.status = 'CANCELLED'
         order.save()
 
-        return Response(OrderSerializer(order).data, status=status.HTTP_200_OK)
+        return Response({
+             'message': 'Đặt hàng thành công',
+             'order_id': order.id,
+             'order': OrderSerializer(order).data}, status=status.HTTP_200_OK)
 
     @action(methods=['patch'], detail=True, url_path='update_address')
     def update_address(self, request, pk):
