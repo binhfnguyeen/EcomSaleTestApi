@@ -265,6 +265,7 @@ class OrderViewSet(viewsets.ViewSet, generics.ListAPIView, generics.RetrieveAPIV
 
         payment = order.payment
         payment.active = False
+        payment.status = False
 
         order.active = False
         order.status = 'CANCELLED'
