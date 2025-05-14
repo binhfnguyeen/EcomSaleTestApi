@@ -234,7 +234,7 @@ class OrderViewSet(viewsets.ViewSet, generics.ListAPIView, generics.RetrieveAPIV
         if not items:
             return Response({'error': 'Danh sách sản phẩm không được để trống'}, status=status.HTTP_400_BAD_REQUEST)
 
-        order = Order.objects.create(user=user, shipping_address=shipping_address, phone=phone ,status=order_status)
+        order = Order.objects.create(user=user, shipping_address=shipping_address, phone=phone, status=order_status)
 
         total = 0
         for item in items:
@@ -378,65 +378,64 @@ class PaymentViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIV
 
             return Response({'paypal_approve_url': approve_url}, status=status.HTTP_200_OK)
 
-    @action(methods=['get'], detail=False, url_path='paypal-success')
-    def paypal_success_callback(self, request):
-        order_id = request.query_params.get('token')
-        if not order_id:
-            return Response({'error': 'Thiếu mã đơn hàng PayPal (token)'}, status=status.HTTP_400_BAD_REQUEST)
 
-        client_id = settings.PAYPAL_CLIENT_ID
-        client_secret = settings.PAYPAL_SECRET
-        auth = (client_id, client_secret)
-        token_res = requests.post(
-            'https://api-m.sandbox.paypal.com/v1/oauth2/token',
-            data={'grant_type': 'client_credentials'},
-            auth=auth
-        )
+def paypal_success_view(request):
+    token = request.GET.get("token")
+    payer_id = request.GET.get("PayerID")
 
-        if token_res.status_code != 200:
-            return Response({"error": "Lỗi khi lấy access token từ Paypal"}, status=500)
+    if not token or not payer_id:
+        return HttpResponse("Thiếu thông tin token hoặc payer_id", status=400)
 
-        access_token = token_res.json().get('access_token')
-        headers = {
-            'Authorization': f'Bearer {access_token}',
-            'Content-Type': 'application/json'
-        }
+    client_id = settings.PAYPAL_CLIENT_ID
+    client_secret = settings.PAYPAL_SECRET
+    auth = (client_id, client_secret)
 
-        capture_res = requests.post(
-            f'https://api-m.sandbox.paypal.com/v2/checkout/orders/{order_id}/capture',
-            headers=headers
-        )
+    token_res = requests.post(
+        'https://api-m.sandbox.paypal.com/v1/oauth2/token',
+        data={'grant_type': 'client_credentials'},
+        auth=auth
+    )
 
-        if capture_res.status_code != 201:
-            return Response({'error': 'Không thể xác nhận thanh toán PayPal'}, status=500)
+    if token_res.status_code != 200:
+        return HttpResponse("Lỗi lấy access token", status=500)
 
-        capture_data = capture_res.json()
-        reference_id = capture_data['purchase_units'][0]['reference_id']
-        order_pk = reference_id.replace("ORDER-", "")
+    access_token = token_res.json().get('access_token')
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json'
+    }
 
-        try:
-            payment = Payment.objects.get(order__pk=order_pk)
-            payment.status = True
-            order = payment.order
-            order.status = 'PAID'
-            order.save()
+    capture_res = requests.post(
+        f'https://api-m.sandbox.paypal.com/v2/checkout/orders/{token}/capture',
+        headers=headers
+    )
 
-            print(f"Đã thanh toán thành công Order có id {order_pk}")
-            payment.save()
-        except Payment.DoesNotExist:
-            return Response({'error': 'Không tìm thấy thanh toán phù hợp trong hệ thống'}, status=404)
+    if capture_res.status_code != 201:
+        return HttpResponse("Lỗi khi xác nhận thanh toán", status=500)
 
-        return Response({'message': 'Đã xác nhận thanh toán thành công!'}, status=status.HTTP_200_OK)
+    reference_id = capture_res.json()['purchase_units'][0]['reference_id']
+    order_id = reference_id.replace("ORDER-", "")
 
-    @action(methods=['get'], detail=False, url_path='paypal-cancel')
-    def paypal_cancel_callback(self, request):
-        token = request.query_params.get('token')
+    try:
+        payment = Payment.objects.get(order__id=order_id)
+        payment.status = True
+        payment.save()
 
-        if not token:
-            return Response({"error": "Mã đơn hàng không có trong yêu cầu!"}, status=status.HTTP_400_BAD_REQUEST)
+        order = payment.order
+        order.status = 'PAID'
+        order.save()
+    except Payment.DoesNotExist:
+        return HttpResponse("Không tìm thấy thanh toán", status=404)
 
-        return Response({"message": "Thanh toán đã bị hủy bỏ! Bạn có thể thử lại và chọn phương thức khác"},
-                        status=status.HTTP_200_OK)
+    return HttpResponse("Thanh toán thành công! Cảm ơn bạn.")
+
+
+def paypal_cancel_view(request):
+    token = request.GET.get("token")
+    if not token:
+        return HttpResponse("Mã đơn hàng không có trong yêu cầu!", status=400)
+
+    return HttpResponse("Thanh toán đã bị hủy bỏ! Bạn có thể thử lại và chọn phương thức khác", status=200)
 
 
 class CartViewSet(viewsets.ViewSet, generics.RetrieveAPIView):
