@@ -263,14 +263,15 @@ class OrderViewSet(viewsets.ViewSet, generics.ListAPIView, generics.RetrieveAPIV
         if order.user != request.user:
             return Response({'error': 'Bạn không có quyền truy cập đơn hàng này'}, status=status.HTTP_400_BAD_REQUEST)
 
+        payment = order.payment
+        payment.active = False
+
         order.active = False
         order.status = 'CANCELLED'
         order.save()
+        payment.save()
 
-        return Response({
-             'message': 'Đặt hàng thành công',
-             'order_id': order.id,
-             'order': OrderSerializer(order).data}, status=status.HTTP_200_OK)
+        return Response({'message': 'Đơn hàng đã được hủy thành công.'}, status=status.HTTP_200_OK)
 
     @action(methods=['patch'], detail=True, url_path='update_address')
     def update_address(self, request, pk):
