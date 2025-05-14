@@ -441,30 +441,54 @@ def paypal_cancel_view(request):
 class CartViewSet(viewsets.ViewSet, generics.RetrieveAPIView):
     queryset = Cart.objects.filter(active=True).prefetch_related('details')
     serializer_class = CartSerializer
+    permission_classes = [permissions.IsAuthenticated]
 
-    def get_object(self):
-        return Cart.objects.get(user=self.request.user)
+    def get_user_cart(self):
+        cart, created = Cart.objects.get_or_create(
+            user=self.request.user
+        )
+        return cart
 
-    @action(methods=['post'], detail=True, url_path='add_product')
-    def add_product(self, request, pk):
+    @action(methods=['get'], detail=False, url_path='my_cart')
+    def my_cart(self, request):
+        cart = self.get_user_cart()
+        serializer = self.get_serializer(cart)
+        return Response(serializer.data)
+
+    @action(methods=['post'], detail=False, url_path='add_product')
+    def add_product(self, request):
+        cart = self.get_user_cart()
+        product_id = request.data.get('product_id')
         try:
-            product = Product.objects.get(pk=request.data.get('product'))
+            quantity = int(request.data.get('quantity', 1))
+        except ValueError:
+            return Response({'error': 'Số lượng không hợp lệ.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not product_id:
+            return Response({'error': 'Vui lòng cung cấp ID sản phẩm.'}, status=status.HTTP_400_BAD_REQUEST)
+        if quantity <= 0:
+            return Response({'error': 'Số lượng sản phẩm phải lớn hơn 0.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            product = Product.objects.get(pk=product_id)
         except Product.DoesNotExist:
-            Response({'error': 'Invalid product ID'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': f'Sản phẩm với ID {product_id} không tồn tại.'})
 
-        t = CartDetail.objects.get(product=product.id, cart=pk)
-        if t:
-            t.quantity += request.data.get('quantity')
-            return Response(CartDetailSerializer(t).data, status=status.HTTP_200_OK)
-        cartDetail = CartDetailSerializer(data={
-            'product': product.id,
-            'quantity': request.data.get('quantity'),
-            'cart': pk
-        })
-        cartDetail.is_valid()
-        item = cartDetail.save()
+        cart_detail, created = CartDetail.objects.get_or_create(
+            cart=cart,
+            product=product,
+            defaults={'quantity': quantity}
+        )
 
-        return Response(CartDetailSerializer(item).data, status=status.HTTP_201_CREATED)
+        if not created:
+            cart_detail.quantity = F('quantity') + quantity
+            cart_detail.save(update_fields=['quantity'])
+            cart_detail.refresh_from_db()
+
+        return Response(
+            CartDetailSerializer(cart_detail).data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK
+        )
 
 
 class ShopRevenueStatsAPIView(APIView):
