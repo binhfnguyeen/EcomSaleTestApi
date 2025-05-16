@@ -46,7 +46,7 @@ class ShopSerializer(ModelSerializer):
 class ProductImageSerializer(ModelSerializer):
     class Meta:
         model = ProductImage
-        fields = ['id', 'image']
+        fields = ['id', 'image','product']
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -55,26 +55,17 @@ class ProductImageSerializer(ModelSerializer):
 
 
 class ProductSerializer(ModelSerializer):
-    shop = ShopSerializer()
-    category = CategorySerializer()
     images = ProductImageSerializer(many=True, read_only=True)
 
     class Meta:
         model = Product
         fields = ['id', 'name', 'shop', 'category', 'price', 'images']
 
-    def create(self, validated_data):
-        data = validated_data.copy()
-        p = Product(name=data['name'], price=data['price'])
-        if data['shop']:
-            s, _ = Shop.objects.get_or_create(name=data['shop']['name'])
-            p.shop = s
-        if data['category']:
-            c, _ = Category.objects.get_or_create(name=data['category']['name'])
-            p.category = c
-        p.save()
-
-        return p
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['shop'] = instance.shop.__str__()  # or instance.shop.__str__()
+        representation['category'] = instance.category.__str__()
+        return representation
 
 
 class ProductDetailSerializer(ProductSerializer):

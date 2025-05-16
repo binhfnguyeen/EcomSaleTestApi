@@ -58,6 +58,7 @@ class ShopViewSet(viewsets.ViewSet, generics.ListCreateAPIView, generics.Retriev
     queryset = Shop.objects.filter(active=True)
     serializer_class = ShopSerializer
     permission_classes = [perms.IsOwnerShop]
+    parser_classes = [parsers.MultiPartParser, ]
 
     @action(methods=['get'], detail=False, url_path='my_shop', permission_classes=[perms.IsOwnerShop])
     def get_my_shop(self, request):
@@ -88,16 +89,29 @@ class ShopViewSet(viewsets.ViewSet, generics.ListCreateAPIView, generics.Retriev
 
     @action(methods=['post'], url_path='create_product', detail=True)
     def create_product(self, request, pk):
-        shop = ShopSerializer(Shop.objects.get(pk=pk))
-        cate = CategorySerializer(Category.objects.get(name=request.data.get('category')))
+
+        shop = Shop.objects.get(pk=pk)
+        category = Category.objects.get(pk=request.data.get('category'))
         p = ProductSerializer(data={
             'name': request.data.get('name'),
             'price': request.data.get('price'),
-            'shop': shop.data,
-            'category': cate.data
+            'shop': shop.id,
+            'category': category.id
         })
         p.is_valid(raise_exception=True)
         d = p.save()
+        print(d.id)
+        print(request.data.get('images'))
+        for img in request.FILES.getlist('images'):
+            i = ProductImageSerializer(data={
+                'product': d.id,
+                'image': img
+            })
+            print(i)
+            i.is_valid(raise_exception=True)
+            i.save()
+        print(d.shop)
+        d.refresh_from_db()
         return Response(ProductSerializer(d).data, status=status.HTTP_201_CREATED)
 
 
@@ -200,9 +214,10 @@ class CommentViewSet(viewsets.ViewSet, generics.ListCreateAPIView, generics.Retr
         return Response(serializer.data)
 
 
-class ProductImageViewSet(viewsets.ViewSet, generics.ListAPIView):
+class ProductImageViewSet(viewsets.ViewSet, generics.ListAPIView,generics.CreateAPIView):
     queryset = Product.objects.filter(active=True)
     serializer_class = ProductImageSerializer
+    parser_classes = [parsers.MultiPartParser]
 
 
 class OrderViewSet(viewsets.ViewSet, generics.ListAPIView, generics.RetrieveAPIView, generics.CreateAPIView):
