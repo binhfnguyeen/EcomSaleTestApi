@@ -6,8 +6,9 @@ pip install -r requirements.txt
 # Collect static files
 python manage.py collectstatic --noinput
 
-# Fake migration nếu cần
-python manage.py migrate ecommerces 0019 --fake || true
+python manage.py showmigrations ecommerces
+
+python manage.py makemigrations ecommerces
 
 # Migrate
 python manage.py migrate --noinput
