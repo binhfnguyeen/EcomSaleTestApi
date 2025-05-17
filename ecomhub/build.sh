@@ -6,9 +6,7 @@ pip install -r requirements.txt
 # Collect static files
 python manage.py collectstatic --noinput
 
-python manage.py showmigrations ecommerces
-
-python manage.py makemigrations ecommerces
+python manage.py makemigrations --noinput
 
 # Migrate
 python manage.py migrate --noinput
