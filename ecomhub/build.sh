@@ -6,6 +6,8 @@ pip install -r requirements.txt
 # Collect static files
 python manage.py collectstatic --noinput
 
+rm 0019_*.py
+
 python manage.py makemigrations --noinput
 
 # Migrate
