@@ -6,6 +6,7 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from django.template.defaulttags import comment
 from django.utils.timezone import activate
+from rest_framework import filters
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.templatetags.rest_framework import data, items
@@ -119,6 +120,8 @@ class ProductViewSet(viewsets.ViewSet, generics.ListAPIView, generics.RetrieveAP
     queryset = Product.objects.filter(active=True).prefetch_related('images').order_by('id')
     serializer_class = ProductSerializer
     pagination_class = paginators.ProductPaginator
+    filter_backends = [filters.OrderingFilter, ]
+    ordering_fields = ['name', 'price']
 
     def get_permissions(self):
         if self.action.__eq__('get_comments'):
@@ -140,7 +143,19 @@ class ProductViewSet(viewsets.ViewSet, generics.ListAPIView, generics.RetrieveAP
             if name:
                 query = query.filter(name__icontains=name)
 
-            return query
+            min_price = self.request.query_params.get('min_price')
+            max_price = self.request.query_params.get('max_price')
+            if min_price:
+                query = query.filter(price__gte=min_price)
+            if max_price:
+                query = query.filter(price__lte=max_price)
+
+            shop_name = self.request.query_params.get('shop_name')
+            if shop_name:
+                query = query.filter(shop__name__icontains=shop_name)
+        for backend in list(self.filter_backends):
+            query = backend().filter_queryset(self.request, query, self)
+        return query
 
     @action(methods=['get', 'post'], url_path='comments', detail=True)
     def get_comments(self, request, pk):
