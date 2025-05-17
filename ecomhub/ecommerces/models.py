@@ -129,7 +129,7 @@ class Payment(BaseModel):
 
 
 class CommentLike(BaseModel):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="liked_comments")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="likes")
     comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name="likes")
 
     class Meta:

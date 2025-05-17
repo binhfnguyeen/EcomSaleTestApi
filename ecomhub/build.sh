@@ -1,19 +1,17 @@
 #!/bin/bash
 
-# Cài đặt thư viện
+# Cài đặt các thư viện cần thiết
 pip install -r requirements.txt
 
-# Collect static files
+# Thu thập static files
 python manage.py collectstatic --noinput
 
-python manage.py showmigrations ecommerces
+python manage.py makemigrations --noinput
 
-python manage.py makemigrations ecommerces
-
-# Migrate
+# Áp dụng migrate
 python manage.py migrate --noinput
 
-# Tạo superuser nếu chưa có
+# Tạo superuser nếu chưa tồn tại
 python manage.py shell << END
 from django.contrib.auth import get_user_model
 import os
