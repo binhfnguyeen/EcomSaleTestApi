@@ -126,3 +126,14 @@ class Payment(BaseModel):
     total = models.IntegerField(default=0)  # Số tiền người dùng đã thực sự trả (thường nên bằng Order.total)
     status = models.BooleanField()
     order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name='payment', null=True)
+
+
+class CommentLike(BaseModel):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="liked_comments")
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name="likes")
+
+    class Meta:
+        unique_together = ('user', 'comment')
+
+    def __str__(self):
+        return f"{self.user.username} liked comment {self.comment.id}"
