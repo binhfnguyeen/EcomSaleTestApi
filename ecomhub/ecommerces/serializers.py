@@ -38,10 +38,18 @@ class UserSerializer(ModelSerializer):
         return instance
 
 
+class UserInfoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'first_name', 'last_name', 'is_shop_owner', 'avatar', 'phone']
+
+
 class ShopSerializer(ModelSerializer):
+    user = UserInfoSerializer()
+
     class Meta:
         model = Shop
-        fields = ['id', 'name','user']
+        fields = ['id', 'name', 'user']
 
 
 class ProductImageSerializer(ModelSerializer):

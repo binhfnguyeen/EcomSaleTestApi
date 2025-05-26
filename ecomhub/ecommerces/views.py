@@ -182,6 +182,15 @@ class ProductViewSet(viewsets.ViewSet, generics.ListAPIView, generics.RetrieveAP
             else:
                 return Response(CommentSerializer(comments, many=True).data)
 
+    @action(methods=['get'], url_path='(?P<shop_name>[^/.]+)', detail=False)
+    def get_shop_info(self, request, shop_name=None):
+        try:
+            shop = Shop.objects.select_related('user').get(name__iexact=shop_name)
+            serializer = ShopSerializer(shop)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Shop.DoesNotExist:
+            return Response({'detail': 'Shop not found'}, status=status.HTTP_404_NOT_FOUND)
+
 
 class CommentViewSet(viewsets.ViewSet, generics.DestroyAPIView, generics.UpdateAPIView):
     queryset = Comment.objects.filter(active=True).order_by('id')
