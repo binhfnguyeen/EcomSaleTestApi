@@ -67,7 +67,12 @@ class ProductSerializer(ModelSerializer):
         representation['shop'] = {
             'id': instance.shop.id,
             'name': instance.shop.name,
-            'user': instance.shop.user.id
+            'user': {
+                'id': instance.shop.user.id,
+                'username': instance.shop.user.username,
+                'first_name': instance.shop.user.first_name,
+                'last_name': instance.shop.user.last_name
+            }
         }
         representation['category'] = instance.category.__str__()
         return representation
