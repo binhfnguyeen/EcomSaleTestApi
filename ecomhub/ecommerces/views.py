@@ -32,7 +32,7 @@ class CategoryViewSet(viewsets.ViewSet, generics.ListAPIView):
     serializer_class = CategorySerializer
 
 
-class UserViewSet(viewsets.ViewSet, generics.CreateAPIView):
+class UserViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.RetrieveAPIView):
     queryset = User.objects.filter(is_active=True)
     serializer_class = UserSerializer
     parser_classes = [parsers.MultiPartParser, ]
@@ -355,6 +355,19 @@ class OrderViewSet(viewsets.ViewSet, generics.ListAPIView, generics.RetrieveAPIV
             orderdetails = orderdetails.filter(product__name__icontains=q)
 
         return Response(OrderDetailWithProductSerializer(orderdetails, many=True).data, status=status.HTTP_200_OK)
+
+    @action(methods=['get'], detail=False, url_path='history_orders')
+    def get_history_orders(self, request):
+        user = request.user
+        orders = Order.objects.filter(user=user, status='PAID', active=True).order_by('-created_date')
+
+        page = self.paginate_queryset(orders)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(orders, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class PaymentViewSet(viewsets.ViewSet, generics.ListAPIView, generics.CreateAPIView):
