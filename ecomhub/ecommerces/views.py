@@ -21,7 +21,7 @@ from rest_framework.decorators import action
 from .serializers import CategorySerializer, UserSerializer, ShopSerializer, ProductSerializer, CommentSerializer, \
     ProductImageSerializer, OrderSerializer, OrderDetailWithProductSerializer, \
     PaymentSerializer, CartSerializer, CartDetailSerializer
-from django.db.models import Sum, F, functions as db_func, Q
+from django.db.models import Sum, F, functions as db_func, Q, Avg
 from rest_framework.views import APIView
 from django.conf import settings
 from datetime import datetime
@@ -183,6 +183,34 @@ class ProductViewSet(viewsets.ViewSet, generics.ListAPIView, generics.RetrieveAP
             else:
                 return Response(CommentSerializer(comments, many=True).data)
 
+    @action(methods=['get'], url_path='compare', detail=True)
+    def compare_products(self, request, pk=None):
+        current_product = self.get_object()
+
+        products = Product.objects.filter(
+            active=True,
+            category=current_product.category
+        ).exclude(pk=current_product.pk).exclude(shop=current_product.shop).prefetch_related('images', 'shop')
+
+        data = []
+        for product in products:
+            comments = product.comment_set.filter(active=True)
+            avg_star = comments.aggregate(Avg('star'))['star__avg'] or 0
+            total_comments = comments.count()
+
+            data.append({
+                'id': product.id,
+                'name': product.name,
+                'price': product.price,
+                'shop': product.shop.name,
+                'image': product.images.first().image.url if product.images.exists() else None,
+                'avg_star': round(avg_star, 1),
+                'total_comments': total_comments
+            })
+
+        data = sorted(data, key=lambda x: (x['price'], -x['avg_star']))
+
+        return Response(data)
 
 class CommentViewSet(viewsets.ViewSet, generics.DestroyAPIView, generics.UpdateAPIView):
     queryset = Comment.objects.filter(active=True).order_by('id')
