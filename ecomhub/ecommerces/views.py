@@ -6,7 +6,7 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from django.template.defaulttags import comment
 from django.utils.timezone import activate
-from rest_framework import filters
+from rest_framework import filters, mixins
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.templatetags.rest_framework import data, items
