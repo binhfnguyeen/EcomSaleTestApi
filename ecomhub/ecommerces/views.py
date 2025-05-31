@@ -664,11 +664,11 @@ class ShopRevenueStatsAPIView(APIView):
         })
 
 class AdminShopStatsView(APIView):
-    # permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        # if not request.user.is_staff and not request.user.is_superuser:
-        #     return Response({'error': 'Bạn không có quyền truy cập'}, status=status.HTTP_403_FORBIDDEN)
+        if not request.user.is_staff and not request.user.is_superuser:
+            return Response({'error': 'Bạn không có quyền truy cập'}, status=status.HTTP_403_FORBIDDEN)
 
         shop_id = request.query_params.get('shop_id')
         if not shop_id:
@@ -687,7 +687,7 @@ class AdminShopStatsView(APIView):
 
             orderdetails = OrderDetail.objects.filter(
                 product__shop=shop,
-                order__status='COMPLETED',
+                order__status='PAID',
                 created_date__year=year
             )
 
@@ -716,7 +716,7 @@ class AdminShopStatsView(APIView):
             # Thống kê theo tháng (có thể lọc theo quý)
             monthly_orderdetails = OrderDetail.objects.filter(
                 product__shop=shop,
-                order__status='COMPLETED',
+                order__status='PAID',
                 created_date__year=year
             )
 
