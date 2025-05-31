@@ -25,6 +25,7 @@ from django.db.models import Sum, F, functions as db_func, Q, Avg
 from rest_framework.views import APIView
 from django.conf import settings
 from datetime import datetime
+from django.db.models.functions import ExtractMonth
 
 
 class CategoryViewSet(viewsets.ViewSet, generics.ListAPIView):
