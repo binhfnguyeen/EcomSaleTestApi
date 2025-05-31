@@ -661,3 +661,86 @@ class ShopRevenueStatsAPIView(APIView):
             'product_stats': product_stats,
             'category_stats': category_stats
         })
+
+class AdminShopStatsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        if not request.user.is_staff and not request.user.is_superuser:
+            return Response({'error': 'Bạn không có quyền truy cập'}, status=status.HTTP_403_FORBIDDEN)
+
+        shop_id = request.query_params.get('shop_id')
+        if not shop_id:
+            return Response({'error': 'Thiếu shop_id'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            shop = Shop.objects.get(id=shop_id)
+        except Shop.DoesNotExist:
+            return Response({'error': 'Không tìm thấy shop'}, status=status.HTTP_404_NOT_FOUND)
+
+        year = int(request.query_params.get('year', datetime.now().year))
+        month = request.query_params.get('month')
+        quarter = request.query_params.get('quarter')
+
+        orderdetails = OrderDetail.objects.filter(
+            product__shop=shop,
+            order__status='COMPLETED',
+            created_date__year=year
+        )
+
+        if month:
+            orderdetails = orderdetails.filter(created_date__month=int(month))
+
+        if quarter:
+            quarter = int(quarter)
+            start_month = (quarter - 1) * 3 + 1
+            end_month = start_month + 2
+            orderdetails = orderdetails.filter(created_date__month__gte=start_month, created_date__month__lte=end_month)
+
+        # Thống kê theo sản phẩm
+        # product_stats = orderdetails.values(name=F('product__name')).annotate(
+        #     total_quantity=Sum('quantity'),
+        #     total_revenue=Sum(F('quantity') * F('product__price'))
+        # ).order_by('-total_revenue')
+
+        # Thống kê theo danh mục
+        # category_stats = orderdetails.values(name=F('product__category__name')).annotate(
+        #     total_quantity=Sum('quantity'),
+        #     total_revenue=Sum(F('quantity') * F('product__price'))
+        # ).order_by('-total_revenue')
+
+        # Thống kê theo tháng (có thể lọc theo quý)
+        monthly_orderdetails = OrderDetail.objects.filter(
+            product__shop=shop,
+            order__status='COMPLETED',
+            created_date__year=year
+        )
+
+        if quarter:
+            monthly_orderdetails = monthly_orderdetails.filter(
+                created_date__month__gte=start_month,
+                created_date__month__lte=end_month
+            )
+
+        monthly_stats_raw = monthly_orderdetails.annotate(month=ExtractMonth('created_date')).values('month').annotate(
+            total_quantity=Sum('quantity'),
+            total_revenue=Sum(F('quantity') * F('product__price'))
+        ).order_by('month')
+
+        # Chuẩn hóa dữ liệu cho 12 tháng
+        monthly_stats = []
+        stats_dict = {item['month']: item for item in monthly_stats_raw}
+        for m in range(1, 13):
+            if quarter and (m < start_month or m > end_month):
+                continue  # Bỏ qua tháng không nằm trong quý được chọn
+            monthly_stats.append({
+                'month': m,
+                'total_quantity': stats_dict.get(m, {}).get('total_quantity', 0),
+                'total_revenue': stats_dict.get(m, {}).get('total_revenue', 0)
+            })
+
+        return Response({
+            # 'product_stats': product_stats,
+            # 'category_stats': category_stats,
+            'monthly_stats': monthly_stats
+        })

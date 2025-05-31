@@ -1,6 +1,8 @@
 from django.contrib import admin
-from .models import Product, ProductImage, Shop, Inventory, Cart, CartDetail, Order, OrderDetail, Payment, Category, Comment, CommentLike
+from django.db.models import Sum
 
+from .models import Product, ProductImage, Shop, Inventory, Cart, CartDetail, Order, OrderDetail, Payment, Category, Comment, CommentLike
+from datetime import datetime
 
 # Register your models here.
 
@@ -73,8 +75,40 @@ class CommentAdmin(admin.ModelAdmin):
 class CommentLikeAdmin(admin.ModelAdmin):
     list_display = ['user', 'comment']
 
-admin.site.register(Shop, ShopAdmin)
-admin.site.register(Product, ProductAdmin)
+
+class ShopStatsAdmin(admin.ModelAdmin):
+    list_display = ['id','name', 'user', 'total_products', 'products_this_year', 'products_this_quarter']
+
+    def total_products(self, obj):
+        return obj.products.count()
+    total_products.short_description = 'Tổng sản phẩm'
+
+    def products_this_year(self, obj):
+        year = datetime.now().year
+        return obj.products.filter(created_date__year=year).count()
+    products_this_year.short_description = 'Sản phẩm năm nay'
+
+    def products_this_quarter(self, obj):
+        now = datetime.now()
+        quarter = (now.month - 1) // 3 + 1
+        return obj.products.filter(
+            created_date__year=now.year,
+            created_date__month__in=[(quarter - 1) * 3 + 1, (quarter - 1) * 3 + 2, (quarter - 1) * 3 + 3]
+        ).count()
+    products_this_quarter.short_description = 'Sản phẩm quý này'
+
+
+class ProductStatsAdmin(admin.ModelAdmin):
+    list_display = ['id','name', 'shop', 'price', 'quantity_sold']
+
+    def quantity_sold(self, obj):
+        result = obj.orderdetails.aggregate(total_sold=Sum('quantity'))['total_sold']
+        return result if result else 0
+    quantity_sold.short_description = 'Đã bán'
+
+
+# admin.site.register(Shop, ShopAdmin)
+# admin.site.register(Product, ProductAdmin)
 admin.site.register(Inventory, InventoryAdmin)
 admin.site.register(Cart, CartAdmin)
 admin.site.register(Order, OrderAdmin)
@@ -82,4 +116,6 @@ admin.site.register(Payment, PaymentAdmin)
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Comment, CommentAdmin)
 admin.site.register(CommentLike, CommentLikeAdmin)
+admin.site.register(Shop, ShopStatsAdmin)
+admin.site.register(Product, ProductStatsAdmin)
 admin.site.site_header = "EcomSale Admin"
