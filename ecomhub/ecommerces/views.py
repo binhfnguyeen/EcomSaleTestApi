@@ -660,7 +660,7 @@ class ShopRevenueStatsAPIView(APIView):
 
         return Response({
             'product_stats': product_stats,
-            'category_stats': category_stats
+            'category_stats': category_statsx
         })
 
 class AdminShopStatsView(APIView):
