@@ -107,8 +107,6 @@ class ProductStatsAdmin(admin.ModelAdmin):
     quantity_sold.short_description = 'Đã bán'
 
 
-# admin.site.register(Shop, ShopAdmin)
-# admin.site.register(Product, ProductAdmin)
 admin.site.register(Inventory, InventoryAdmin)
 admin.site.register(Cart, CartAdmin)
 admin.site.register(Order, OrderAdmin)

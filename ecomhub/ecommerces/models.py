@@ -32,16 +32,6 @@ class Inventory(BaseModel):
     product = models.OneToOneField('Product', on_delete=models.CASCADE, null=True, related_name="inventory")
 
 
-# class Discount(BaseModel):
-#     name = models.CharField(max_length=50)
-#     percentage = models.FloatField(default=0)
-#     amount = models.IntegerField(default=0)
-#     product = models.ForeignKey('Product', on_delete=models.CASCADE, null=True, blank=True, related_name="discounts")
-#     order = models.ForeignKey('Order', on_delete=models.CASCADE, null=True, blank=True, related_name="discounts")
-#
-#     def __str__(self):
-#         return self.name
-
 
 class ProductImage(BaseModel):
     image = CloudinaryField(null=True, blank=True)

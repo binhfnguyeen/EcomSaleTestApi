@@ -3,14 +3,9 @@ from itertools import product
 
 import requests
 from django.http import HttpResponse
-from django.shortcuts import render
-from django.template.defaulttags import comment
-from django.utils.timezone import activate
 from rest_framework import filters, mixins
-from rest_framework.exceptions import PermissionDenied
+
 from rest_framework.response import Response
-from rest_framework.templatetags.rest_framework import data, items
-from urllib3 import request
 from . import paginators
 from . import perms
 from . import serializers
@@ -21,7 +16,7 @@ from rest_framework.decorators import action
 from .serializers import CategorySerializer, UserSerializer, ShopSerializer, ProductSerializer, CommentSerializer, \
     ProductImageSerializer, OrderSerializer, OrderDetailWithProductSerializer, \
     PaymentSerializer, CartSerializer, CartDetailSerializer
-from django.db.models import Sum, F, functions as db_func, Q, Avg
+from django.db.models import Sum, F, Avg
 from rest_framework.views import APIView
 from django.conf import settings
 from datetime import datetime
@@ -680,7 +675,7 @@ class ShopRevenueStatsAPIView(APIView):
 
         return Response({
             'product_stats': product_stats,
-            'category_stats': category_statsx
+            'category_stats': category_stats
         })
 
 class AdminShopStatsView(APIView):
@@ -720,20 +715,6 @@ class AdminShopStatsView(APIView):
                 end_month = start_month + 2
                 orderdetails = orderdetails.filter(created_date__month__gte=start_month,
                                                    created_date__month__lte=end_month)
-
-            # Thống kê theo sản phẩm
-            # product_stats = orderdetails.values(name=F('product__name')).annotate(
-            #     total_quantity=Sum('quantity'),
-            #     total_revenue=Sum(F('quantity') * F('product__price'))
-            # ).order_by('-total_revenue')
-
-            # Thống kê theo danh mục
-            # category_stats = orderdetails.values(name=F('product__category__name')).annotate(
-            #     total_quantity=Sum('quantity'),
-            #     total_revenue=Sum(F('quantity') * F('product__price'))
-            # ).order_by('-total_revenue')
-
-            # Thống kê theo tháng (có thể lọc theo quý)
             monthly_orderdetails = OrderDetail.objects.filter(
                 product__shop=shop,
                 order__status='PAID',
@@ -752,12 +733,11 @@ class AdminShopStatsView(APIView):
                 total_revenue=Sum(F('quantity') * F('product__price'))
             ).order_by('month')
 
-            # Chuẩn hóa dữ liệu cho 12 tháng
             monthly_stats = []
             stats_dict = {item['month']: item for item in monthly_stats_raw}
             for m in range(1, 13):
                 if quarter and (m < start_month or m > end_month):
-                    continue  # Bỏ qua tháng không nằm trong quý được chọn
+                    continue
                 monthly_stats.append({
                     'month': m,
                     'total_quantity': stats_dict.get(m, {}).get('total_quantity', 0),
@@ -765,8 +745,6 @@ class AdminShopStatsView(APIView):
                 })
 
             return Response({
-                # 'product_stats': product_stats,
-                # 'category_stats': category_stats,
                 'monthly_stats': monthly_stats
             })
         except Exception as e:

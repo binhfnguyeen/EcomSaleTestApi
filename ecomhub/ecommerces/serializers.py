@@ -87,9 +87,6 @@ class ProductSerializer(ModelSerializer):
         return representation
 
 
-class ProductDetailSerializer(ProductSerializer):
-    pass
-
 
 class CommentSerializer(ModelSerializer):
     like_count = serializers.SerializerMethodField()
