@@ -695,31 +695,21 @@ class AdminShopStatsView(APIView):
             return Response({'error': 'Không tìm thấy shop'}, status=status.HTTP_404_NOT_FOUND)
 
         year = int(request.query_params.get('year', datetime.now().year))
-        month = request.query_params.get('month')
         quarter = request.query_params.get('quarter')
 
         try:
 
-            orderdetails = OrderDetail.objects.filter(
-                product__shop=shop,
-                order__status='PAID',
-                created_date__year=year
-            )
-
-            if month:
-                orderdetails = orderdetails.filter(created_date__month=int(month))
 
             if quarter:
                 quarter = int(quarter)
                 start_month = (quarter - 1) * 3 + 1
                 end_month = start_month + 2
-                orderdetails = orderdetails.filter(created_date__month__gte=start_month,
-                                                   created_date__month__lte=end_month)
-            monthly_orderdetails = OrderDetail.objects.filter(
-                product__shop=shop,
-                order__status='PAID',
-                created_date__year=year
-            )
+
+            monthly_orderdetails = OrderDetail.objects.select_related('product', 'order').filter(
+                                                                                        product__shop=shop,
+                                                                                        order__status='PAID',
+                                                                                        created_date__year=year
+                                                                                        )
 
             if quarter:
                 monthly_orderdetails = monthly_orderdetails.filter(
@@ -727,8 +717,7 @@ class AdminShopStatsView(APIView):
                     created_date__month__lte=end_month
                 )
 
-            monthly_stats_raw = monthly_orderdetails.annotate(month=ExtractMonth('created_date')).values(
-                'month').annotate(
+            monthly_stats_raw = monthly_orderdetails.annotate(month=ExtractMonth('created_date')).values('month').annotate(
                 total_quantity=Sum('quantity'),
                 total_revenue=Sum(F('quantity') * F('product__price'))
             ).order_by('month')
