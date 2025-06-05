@@ -16,7 +16,7 @@ from rest_framework.decorators import action
 from .serializers import CategorySerializer, UserSerializer, ShopSerializer, ProductSerializer, CommentSerializer, \
     ProductImageSerializer, OrderSerializer, OrderDetailWithProductSerializer, \
     PaymentSerializer, CartSerializer, CartDetailSerializer
-from django.db.models import Sum, F, Avg
+from django.db.models import Sum, F, Avg,ExpressionWrapper, FloatField
 from rest_framework.views import APIView
 from django.conf import settings
 from datetime import datetime
@@ -665,7 +665,7 @@ class ShopRevenueStatsAPIView(APIView):
 
         product_stats = orderdetails.values(name=F('product__name')).annotate(
             total_quantity=Sum('quantity'),
-            total_revenue=Sum(F('quantity') * F('product__price'))
+            total_revenue=ExpressionWrapper(F('quantity') * F('product__price'), output_field=FloatField())
         ).order_by('-total_revenue')
 
         category_stats = orderdetails.values(name=F('product__category__name')).annotate(
